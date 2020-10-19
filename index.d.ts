@@ -1,9 +1,14 @@
 import {
-    HaperApi
+    HaperApi,
 } from './src/Interfaces';
 
-declare namespace haper {
-    export function createHaper({ baseUrl }: { baseUrl: string }): HaperApi
-}
+export function createHaper({ baseUrl }: { baseUrl?: string }): HaperApi
 
-export = haper;
+export {
+    HaperApi,
+    HaperCancelablePromise,
+    HaperRequestOptions,
+    ClientInterceptorFilters,
+    HaperMethodOptions,
+    HaperRequestContentType,
+} from './src/Interfaces';
