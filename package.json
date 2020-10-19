@@ -1,0 +1,34 @@
+{
+  "name": "haper",
+  "version": "1.0.0",
+  "description": "Simple JS fetching library with 0 dependencies",
+  "main": "lib/index.js",
+  "scripts": {
+    "build": "babel src --out-dir lib --extensions \".ts\"",
+    "prepublish": "npm run build"
+  },
+  "keywords": [
+    "haper",
+    "fetch",
+    "js",
+    "fetching"
+  ],
+  "author": "Dawid Wojda <dawiidio@gmail.com>",
+  "license": "ISC",
+  "files": [
+    "lib",
+    "index.d.ts",
+    "package.json"
+  ],
+  "types": "index.d.ts",
+  "devDependencies": {
+    "@babel/cli": "^7.12.1",
+    "@babel/core": "^7.12.3",
+    "@babel/plugin-proposal-class-properties": "^7.12.1",
+    "@babel/preset-env": "^7.12.1",
+    "@babel/preset-typescript": "^7.12.1",
+    "core-js": "^3.6.5",
+    "tsc": "^1.20150623.0",
+    "typescript": "^4.0.3"
+  }
+}
