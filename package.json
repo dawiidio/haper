@@ -1,6 +1,6 @@
 {
   "name": "haper",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Simple JS fetching library with 0 dependencies",
   "main": "lib/index.js",
   "scripts": {
