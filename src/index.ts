@@ -169,34 +169,38 @@ export function createHaper({
         });
     };
 
-    haper.post = <T>(url: string, data?: any, options: HaperMethodOptions = {}): HaperCancelablePromise<T> => {
+    haper.post = <T>(url: string, params?: any, options: HaperMethodOptions = {}): HaperCancelablePromise<T> => {
         return haper<T>({
             url,
             method: 'POST',
+            params,
             ...options,
         });
     };
 
-    haper.delete = <T>(url: string, data?: any, options: HaperMethodOptions = {}): HaperCancelablePromise<T> => {
+    haper.delete = <T>(url: string, params?: any, options: HaperMethodOptions = {}): HaperCancelablePromise<T> => {
         return haper<T>({
             url,
             method: 'DELETE',
+            params,
             ...options,
         });
     };
 
-    haper.patch = <T>(url: string, data?: any, options: HaperMethodOptions = {}): HaperCancelablePromise<T> => {
+    haper.patch = <T>(url: string, params?: any, options: HaperMethodOptions = {}): HaperCancelablePromise<T> => {
         return haper<T>({
             url,
             method: 'PATCH',
+            params,
             ...options,
         });
     };
 
-    haper.put = <T>(url: string, data?: any, options: HaperMethodOptions = {}): HaperCancelablePromise<T> => {
+    haper.put = <T>(url: string, params?: any, options: HaperMethodOptions = {}): HaperCancelablePromise<T> => {
         return haper<T>({
             url,
             method: 'PUT',
+            params,
             ...options,
         });
     };
