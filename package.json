@@ -17,7 +17,7 @@
   "license": "ISC",
   "files": [
     "lib",
-    "index.d.ts",
+    "src/index.d.ts",
     "package.json"
   ],
   "types": "src/index.d.ts",
