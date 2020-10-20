@@ -4,7 +4,7 @@ import {
     HaperResponseType,
     HTTPMethods,
     RequestInterceptor, ResponseDataInterceptor,
-} from './Interfaces';
+} from './index.d';
 
 import {
     InterceptorRegistry,

@@ -20,7 +20,7 @@
     "index.d.ts",
     "package.json"
   ],
-  "types": "index.d.ts",
+  "types": "src/index.d.ts",
   "devDependencies": {
     "@babel/cli": "^7.12.1",
     "@babel/core": "^7.12.3",

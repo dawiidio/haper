@@ -1,11 +1,4 @@
-import { HTTPMethods, RequestInterceptor, ResponseDataInterceptor } from './Interfaces';
-
-export interface InterceptorFilters {
-    url: string
-    method?: HTTPMethods | '*'
-    type?: string
-    builtIn?: boolean
-}
+import { HTTPMethods, InterceptorFilters, RequestInterceptor, ResponseDataInterceptor } from './index.d';
 
 export abstract class InterceptorRegistry<InterceptorType> {
     static readonly keySeparator = ' ';

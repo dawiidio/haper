@@ -1,5 +1,3 @@
-import { InterceptorFilters } from './InterceptorRegistry';
-
 export type HaperResponseType = 'arrayBuffer' | 'blob' | 'formData' | 'json' | 'text';
 export type HaperRequestContentType = 'json';
 export type HTTPMethods = 'POST' | 'GET' | 'PUT' | 'PATCH' | 'DELETE';
@@ -29,6 +27,13 @@ export interface HaperInternalData {
 
 export type HaperMethodOptions = Partial<Omit<Omit<HaperRequestOptions, 'method'>, 'params'>>;
 
+export interface InterceptorFilters {
+    url: string
+    method?: HTTPMethods | '*'
+    type?: string
+    builtIn?: boolean
+}
+
 export interface HaperApi {
     <T>(options: HaperRequestOptions): HaperCancelablePromise<T>
     get<T>(url: string, data?: any, options?: HaperMethodOptions): HaperCancelablePromise<T>
@@ -41,3 +46,5 @@ export interface HaperApi {
     registerResponseDataInterceptor(filterKeyString: string, interceptor: ResponseDataInterceptor): any
     registerResponseDataInterceptor(filters:ClientInterceptorFilters, interceptor: ResponseDataInterceptor): any
 }
+
+export function createHaper({ baseUrl }: { baseUrl?: string }): HaperApi
