@@ -17,6 +17,7 @@ export interface HaperRequestOptions extends RequestInit {
     params?: any,
     responseType?: HaperResponseType
     contentType?: HaperRequestContentType
+    urlTemplate?: string
 }
 
 export interface HaperInternalData {
@@ -46,5 +47,24 @@ export interface HaperApi {
     registerResponseDataInterceptor(filterKeyString: string, interceptor: ResponseDataInterceptor): any
     registerResponseDataInterceptor(filters:ClientInterceptorFilters, interceptor: ResponseDataInterceptor): any
 }
+
+interface HaperApiBuilderOptions {
+    faker?: boolean
+}
+
+interface FakerMethod<T, P = any> {
+    (params: P): HaperCancelablePromise<T>;
+    fake(faker: (params: Partial<P>) => T): FakerMethod<T, P>;
+}
+
+interface ApiBuilder {
+    get<T, P = any>(url: string, options?: HaperMethodOptions): FakerMethod<T, P>;
+    put<T, P = any>(url: string, options?: HaperMethodOptions): FakerMethod<T, P>;
+    post<T, P = any>(url: string, options?: HaperMethodOptions): FakerMethod<T, P>;
+    delete<T, P = any>(url: string, options?: HaperMethodOptions): FakerMethod<T, P>;
+    patch<T, P = any>(url: string, options?: HaperMethodOptions): FakerMethod<T, P>;
+}
+
+export function createApiBuilder (haper: HaperApi, apiBuilderOptions?: HaperApiBuilderOptions): ApiBuilder;
 
 export function createHaper({ baseUrl }: { baseUrl?: string }): HaperApi

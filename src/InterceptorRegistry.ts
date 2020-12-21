@@ -1,5 +1,22 @@
 import { HTTPMethods, InterceptorFilters, RequestInterceptor, ResponseDataInterceptor } from './index.d';
 
+function isUrlTemplateMatchWithInterpolatedVersion(original: string, interpolated: string): boolean {
+    const splitedInterpolated = interpolated.split('/');
+    const splitedOriginal = original.split('/');
+
+    if (splitedInterpolated.length !== splitedOriginal.length)
+        return false;
+
+    const val = splitedOriginal.find((str, i) => {
+        if (str.startsWith(':'))
+            return false;
+        else
+            return str !== splitedInterpolated[i];
+    });
+
+    return !val;
+}
+
 export abstract class InterceptorRegistry<InterceptorType> {
     static readonly keySeparator = ' ';
     private registry: Map<string, Array<InterceptorType>> = new Map();
@@ -19,7 +36,7 @@ export abstract class InterceptorRegistry<InterceptorType> {
     }
 
     static compareFilters(interceptorFilters: InterceptorFilters, target: InterceptorFilters): boolean {
-        let matchingBoolValue = interceptorFilters.url === target.url || interceptorFilters.url === '*';
+        let matchingBoolValue = isUrlTemplateMatchWithInterpolatedVersion(interceptorFilters.url, target.url) || interceptorFilters.url === '*';
 
         if (matchingBoolValue) {
             if (interceptorFilters.method)

@@ -11,100 +11,15 @@ import {
     RequestInterceptorRegistry,
     ResponseDataInterceptorRegistry,
 } from './InterceptorRegistry';
+import {
+    createCancelablePromise, getRequestFactory,
+    getResponseBodyParser,
+    getUrl,
+    interpolateUrlAndRemoveMatchedVariablesFromParamsObject,
+} from './helpers';
 
 interface HaperFactoryOptions<BaseDataShape = any> {
     baseUrl?: string
-}
-
-const haperRequestContentTypeToHeaderContentTypeMap: Record<HaperRequestContentType, string> = {
-    json: 'application/json',
-};
-
-function createCancelablePromise<T>() {
-    const controller = new AbortController();
-    const signal = controller.signal;
-    let resolve: (value?: T | PromiseLike<T>) => void;
-    let reject: (reason?: any) => void;
-
-    const originalPromise = new Promise<T>((res, rej) => {
-        resolve = res;
-        reject = rej;
-    });
-
-    const cancel = () => {
-        controller.abort();
-        reject('cancel');
-    };
-
-    const promise: HaperCancelablePromise<T> = {
-        then: (...all) => originalPromise.then(...all),
-        catch: (...all) => originalPromise.catch(...all),
-        finally: (...all) => originalPromise.finally(...all),
-        cancel,
-        [Symbol.toStringTag]: originalPromise[Symbol.toStringTag]
-    };
-
-    return {
-        signal,
-        promise,
-        //@ts-ignore
-        resolve,
-        //@ts-ignore
-        reject,
-    };
-}
-
-function createJSONRequest(options:HaperRequestOptions, internalData: HaperInternalData): Request {
-    let {
-        responseType,
-        params = null,
-        method = 'GET',
-        url,
-        contentType = 'json',
-        ...rawRequestOptions
-    }: HaperRequestOptions = options;
-
-    const extendedOptions: RequestInit = {
-        ...rawRequestOptions,
-        method, // *GET, POST, PUT, DELETE, etc.
-        // mode: 'cors', // no-cors, cors, *same-origin
-        cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
-        // credentials: 'same-origin', // include, *same-origin, omit
-        headers: {
-            'Content-Type': haperRequestContentTypeToHeaderContentTypeMap[contentType],
-            // 'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        redirect: 'follow', // manual, *follow, error
-        referrer: 'no-referrer', // no-referrer, *client
-        body: method !== 'GET' ? JSON.stringify(params) : undefined, // body data type must match "Content-Type" header,
-        signal: internalData.signal,
-    };
-
-    return new Request(internalData.requestFinalUrl, extendedOptions);
-}
-
-function getRequestFactory(requestOptions: HaperRequestOptions):(requestOptions: HaperRequestOptions, internalData: HaperInternalData) => Request {
-    if (requestOptions.contentType === 'json') {
-        return createJSONRequest;
-    }
-    //todo support for files and other types
-    else {
-        return createJSONRequest;
-    }
-}
-
-function getResponseBodyParser(requestOptions: HaperRequestOptions):(response: Response) => any {
-    return (response => response[requestOptions.responseType ?? 'json']())
-}
-
-function getUrl(baseUrl:string, options:HaperRequestOptions) {
-    if (!options.method || options.method.toUpperCase() === 'GET') {
-        let urlSearchParams: URLSearchParams = new URLSearchParams(options.params ?? {});
-
-        return `${baseUrl}?${urlSearchParams.toString()}`;
-    }
-
-    return baseUrl;
 }
 
 export function createHaper({
@@ -243,3 +158,83 @@ export function createHaper({
 
     return haper;
 }
+
+interface HaperApiBuilderOptions {
+    faker?: boolean
+}
+
+export function createApiBuilder(haper: HaperApi, apiBuilderOptions: HaperApiBuilderOptions = {}) {
+    const createMethodFactory = (name: 'get'|'put'|'post'|'delete'|'patch') => <T, P = any>(url: string, options: HaperMethodOptions = {}) => {
+        let faker: ((params: Partial<P>) => T)|undefined;
+
+        const fn = (params: P): HaperCancelablePromise<T> => {
+            const {
+                interpolatedUrl,
+                paramsAfterInterpolation
+            } = interpolateUrlAndRemoveMatchedVariablesFromParamsObject(url, params);
+
+            if (faker && apiBuilderOptions.faker) {
+                const {
+                    promise,
+                    resolve
+                } = createCancelablePromise<T>();
+
+                setTimeout(() => {
+                    if (faker)
+                        resolve(faker(paramsAfterInterpolation));
+                }, Math.round(50 + (Math.random() * 500)));
+
+                return promise;
+            }
+
+            return haper[name]<T>(interpolatedUrl, paramsAfterInterpolation, options);
+        };
+
+        fn.fake = (fakerFn: (params: Partial<P>) => T) => {
+            faker = fakerFn;
+            return fn;
+        };
+
+        return fn;
+    };
+
+    const get = createMethodFactory('get');
+    const put = createMethodFactory('put');
+    const post = createMethodFactory('post');
+    const _delete = createMethodFactory('delete');
+    const patch = createMethodFactory('patch');
+
+    return {
+        get,
+        put,
+        post,
+        delete: _delete,
+        patch
+    };
+}
+
+// const a = createApiBuilder(createHaper());
+//
+// interface Device {
+//     id: string
+//     name: string
+//     model: string
+// }
+//
+// const getList = a.get<Device[], { name: string }>('/device/:id').fake((params) => {
+//     return [
+//         {
+//             id: 'ddfdf',
+//             name: 'srer',
+//             model: 'fdf'
+//         }
+//     ]
+// });
+//
+// async function m() {
+//     const list = await getList({
+//         name: '',
+//     });
+//
+//
+// }

@@ -54,6 +54,87 @@ const haper = createHaper({
 })();
 ```
 
+### Api builder approach
+Haper exports function `createApiBuilder` which enables different approach for defining 
+API endpoints. That approach allows you to create endpoints with corresponding models,
+parameters and faker functions in one place. But code example express more than words so 
+here we go: 
+
+__Warning!__
+
+Sadly api builder approach does not support yet library for React users https://github.com/dawiidio/haper-hooks
+I'll try to integrate those two ASAP ;) but keep it in mind before choosing it as main concept
+
+```typescript jsx
+import {
+    createHaper,
+    createApiBuilder,
+} from 'haper';
+
+export const haper = createHaper({
+    baseUrl: 'http://localhost:3000/api'
+});
+
+const apiBuilder = createApiBuilder(haper, {
+    faker: false, // if true haper will call fake functions (if defined) to get the data instead of talking to server
+});
+
+// very simple example of params object (DTO object)
+interface AddressDto {
+  city: string;
+  street: string;
+}
+
+// also very simple interface of model returned from endpoints
+interface Address {
+  id: number;
+  city: string;
+  country: string;
+}
+
+export const getAddressList = apiBuilder
+    .get<Array<Address>, {}>('address')
+    .fake(() => {
+        return [
+            {
+                id: 1,
+                city: 'Warsaw',
+                country: 'Poland'
+            },
+            {
+                id: 1,
+                city: 'Vilnius',
+                country: 'Lithuania'
+            },
+        ];
+    });
+
+// here we have an important example of defining url variables
+// Endpoint url is interpolated with values passed in params object
+// then matched values will be deleted from params object before send to server
+// to match base dto object interface
+export const updateAddress = apiBuilder
+    .put<Address, AddressDto & { userId: number }>('user/:userId/address')
+    .fake(() => {
+        return {
+            id: 1,
+            city: 'Warsaw',
+            country: 'Poland'
+        };
+    });
+
+// usage of defined endpoints
+async function main() {
+    const address = await updateAddress({
+        userId: 8, // userId will match url param so it will be deleted and server receives only city and country keys 
+        city: 'Prague',
+        country: 'Czech Republic'
+    });
+    
+    console.log(address);
+}
+```
+
 #### canceling request
 Haper methods returns promises with additional method `cancel()`
 which comes useful in SPA applications when your component doesn't 
@@ -128,6 +209,9 @@ Interceptors works in "pipe" mode - every interceptor matched for request or res
 gets output data from previous to its input, so final data might be composed from many
 chained interceptors
 
+Interceptor url may contains interpolation placeholders which starts with ":", for example:
+`/user/:id/profile` will be matched with `/user/1/profile`
+
 Examples:
 
 1. Add authorization header to all `POST` requests
@@ -168,6 +252,7 @@ haper.registerResponseDataInterceptor('* /user *', (data:RestData) => {
 ```
 
 ## Roadmap
+- [x] Faker functions
 - [ ] Support for other data types than simple JSON (eg. text, formData)
 - [ ] Support for file uploading
   - [ ] progress
