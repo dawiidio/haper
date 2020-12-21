@@ -259,4 +259,5 @@ haper.registerResponseDataInterceptor('* /user *', (data:RestData) => {
   - [ ] keep promise-like api
 - [ ] Support for file downloading (?)
 - [ ] Improve filters system
+- [ ] In memory(?) cache system
 - [ ] Rethink interceptors concept, especially with types in mind
