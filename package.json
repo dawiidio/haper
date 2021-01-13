@@ -1,7 +1,7 @@
 {
   "name": "haper",
-  "version": "1.1.0",
-  "description": "Simple JS fetching library with 0 dependencies",
+  "version": "1.2.0",
+  "description": "Simple JS fetching library with 0 production dependencies",
   "main": "lib/index.js",
   "scripts": {
     "build": "babel src --out-dir lib --extensions \".ts\"",

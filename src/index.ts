@@ -20,13 +20,16 @@ import {
 
 interface HaperFactoryOptions<BaseDataShape = any> {
     baseUrl?: string
+    mock?: boolean
 }
 
 export function createHaper({
-                         baseUrl = '',
-                     }: HaperFactoryOptions = {}):HaperApi {
+                                baseUrl = '',
+                                mock,
+                            }: HaperFactoryOptions = {}): HaperApi {
     const requestInterceptors = new RequestInterceptorRegistry();
     const responseInterceptors = new ResponseDataInterceptorRegistry();
+    const requestPromisesRegistry = new Map<string, HaperCancelablePromise<any>>();
 
     function haper<T>(options: HaperRequestOptions): HaperCancelablePromise<T> {
         const {
@@ -47,10 +50,40 @@ export function createHaper({
 
         const bodyParser = getResponseBodyParser(options);
 
-        const requestFactory = getRequestFactory(options);
-        const baseRequest = requestFactory(options, internalData);
+        const {
+            interpolatedUrl,
+            paramsAfterInterpolation
+        } = interpolateUrlAndRemoveMatchedVariablesFromParamsObject(requestFinalUrl, options.params || {});
+
+        const requestFactory = getRequestFactory({
+            ...options,
+            params: paramsAfterInterpolation
+        });
+
+        const baseRequest = requestFactory(options, {
+            ...internalData,
+            requestFinalUrl: interpolatedUrl
+        });
 
         const interceptedRequest = requestInterceptors.pipe(baseRequest);
+
+        if ((mock || options.mock) && options.mockingFunction) {
+            setTimeout(() => {
+                if (options.mockingFunction)
+                    resolve(options.mockingFunction(paramsAfterInterpolation));
+            }, Math.round(50 + (Math.random() * 500)));
+
+            return promise;
+        }
+
+        if (options.requestId) {
+            if (requestPromisesRegistry.has(options.requestId)) {
+                console.error('Duplicated haper request id: ', options.requestId);
+            }
+            else {
+                requestPromisesRegistry.set(options.requestId, promise);
+            }
+        }
 
         window
             // @ts-ignore
@@ -65,9 +98,12 @@ export function createHaper({
                     }, data);
 
                     resolve(interceptedData);
-                }
-                catch (e) {
+                } catch (e) {
                     reject(e);
+                }
+                finally {
+                    if (options.requestId)
+                        requestPromisesRegistry.delete(options.requestId);
                 }
             })
             .catch(reject);
@@ -120,8 +156,12 @@ export function createHaper({
         });
     };
 
-    haper.registerRequestInterceptor = (filters:ClientInterceptorFilters|string, interceptor: RequestInterceptor) => {
-        const filtersObject:ClientInterceptorFilters = typeof filters === 'string' ? InterceptorRegistry.parseKeyToFilters(filters) : filters;
+    haper.getRequestPromise = (id: string): HaperCancelablePromise<any>|undefined => {
+        return requestPromisesRegistry.get(id);
+    };
+
+    haper.registerRequestInterceptor = (filters: ClientInterceptorFilters | string, interceptor: RequestInterceptor) => {
+        const filtersObject: ClientInterceptorFilters = typeof filters === 'string' ? InterceptorRegistry.parseKeyToFilters(filters) : filters;
 
         const {
             type,
@@ -138,8 +178,8 @@ export function createHaper({
         }, interceptor);
     };
 
-    haper.registerResponseDataInterceptor = (filters:ClientInterceptorFilters|string, interceptor: ResponseDataInterceptor) => {
-        const filtersObject:ClientInterceptorFilters = typeof filters === 'string' ? InterceptorRegistry.parseKeyToFilters(filters) : filters;
+    haper.registerResponseDataInterceptor = (filters: ClientInterceptorFilters | string, interceptor: ResponseDataInterceptor) => {
+        const filtersObject: ClientInterceptorFilters = typeof filters === 'string' ? InterceptorRegistry.parseKeyToFilters(filters) : filters;
 
         const {
             type,
@@ -164,14 +204,14 @@ interface HaperApiBuilderOptions {
 }
 
 export function createApiBuilder(haper: HaperApi, apiBuilderOptions: HaperApiBuilderOptions = {}) {
-    const createMethodFactory = (name: 'get'|'put'|'post'|'delete'|'patch') => <T, P = any>(url: string, options: HaperMethodOptions = {}) => {
-        let faker: ((params: Partial<P>) => T)|undefined;
+    const createMethodFactory = (name: 'get' | 'put' | 'post' | 'delete' | 'patch') => <T, P = any>(url: string, options: HaperMethodOptions = {}) => {
+        let faker: ((params: Partial<P>) => T) | undefined;
 
-        const fn = (params: P): HaperCancelablePromise<T> => {
+        const fn = (params?: P|null, requestId?: string): HaperCancelablePromise<T> => {
             const {
                 interpolatedUrl,
                 paramsAfterInterpolation
-            } = interpolateUrlAndRemoveMatchedVariablesFromParamsObject(url, params);
+            } = interpolateUrlAndRemoveMatchedVariablesFromParamsObject(url, params || {});
 
             if (faker && apiBuilderOptions.faker) {
                 const {
@@ -187,7 +227,10 @@ export function createApiBuilder(haper: HaperApi, apiBuilderOptions: HaperApiBui
                 return promise;
             }
 
-            return haper[name]<T>(interpolatedUrl, paramsAfterInterpolation, options);
+            return haper[name]<T>(interpolatedUrl, paramsAfterInterpolation, {
+                ...options,
+                requestId
+            });
         };
 
         fn.fake = (fakerFn: (params: Partial<P>) => T) => {
@@ -209,7 +252,8 @@ export function createApiBuilder(haper: HaperApi, apiBuilderOptions: HaperApiBui
         put,
         post,
         delete: _delete,
-        patch
+        patch,
+
     };
 }
 

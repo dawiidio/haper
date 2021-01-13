@@ -11,13 +11,16 @@ export interface HaperCancelablePromise<T> extends Promise<T> {
     cancel(): void
 }
 
-export interface HaperRequestOptions extends RequestInit {
+export interface HaperRequestOptions<T = any, P = any> extends RequestInit {
     url: string,
     method: HTTPMethods
     params?: any,
     responseType?: HaperResponseType
     contentType?: HaperRequestContentType
     urlTemplate?: string
+    mockingFunction?: (params: P) => T
+    mock?: boolean
+    requestId?: string
 }
 
 export interface HaperInternalData {
@@ -46,18 +49,19 @@ export interface HaperApi {
     registerRequestInterceptor(filters:ClientInterceptorFilters, interceptor: RequestInterceptor): any
     registerResponseDataInterceptor(filterKeyString: string, interceptor: ResponseDataInterceptor): any
     registerResponseDataInterceptor(filters:ClientInterceptorFilters, interceptor: ResponseDataInterceptor): any
+    getRequestPromise<T = any>(id: string): HaperCancelablePromise<T>|undefined
 }
 
-interface HaperApiBuilderOptions {
+export interface HaperApiBuilderOptions {
     faker?: boolean
 }
 
-interface FakerMethod<T, P = any> {
-    (params: P): HaperCancelablePromise<T>;
+export interface FakerMethod<T, P = any> {
+    (params?: P|null, requestId?: string): HaperCancelablePromise<T>;
     fake(faker: (params: Partial<P>) => T): FakerMethod<T, P>;
 }
 
-interface ApiBuilder {
+export interface ApiBuilder {
     get<T, P = any>(url: string, options?: HaperMethodOptions): FakerMethod<T, P>;
     put<T, P = any>(url: string, options?: HaperMethodOptions): FakerMethod<T, P>;
     post<T, P = any>(url: string, options?: HaperMethodOptions): FakerMethod<T, P>;

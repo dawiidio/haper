@@ -60,11 +60,6 @@ API endpoints. That approach allows you to create endpoints with corresponding m
 parameters and faker functions in one place. But code example express more than words so 
 here we go: 
 
-__Warning!__
-
-Sadly api builder approach does not support yet library for React users https://github.com/dawiidio/haper-hooks
-I'll try to integrate those two ASAP ;) but keep it in mind before choosing it as main concept
-
 ```typescript jsx
 import {
     createHaper,
